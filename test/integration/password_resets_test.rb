@@ -1,5 +1,3 @@
-require 'test_helper'
-
 class PasswordResetsTest < ActionDispatch::IntegrationTest
 
   def setup
@@ -41,8 +39,8 @@ class PasswordResetsTest < ActionDispatch::IntegrationTest
     # Invalid password & confirmation
     patch password_reset_path(user.reset_token),
           params: { email: user.email,
-                    user: { password:              "foobax",
-                            password_confirmation: "barquuz" } }
+                    user: { password:              "foobaz",
+                            password_confirmation: "barquux" } }
     assert_select 'div#error_explanation'
     # Empty password
     patch password_reset_path(user.reset_token),
@@ -53,10 +51,25 @@ class PasswordResetsTest < ActionDispatch::IntegrationTest
     # Valid password & confirmation
     patch password_reset_path(user.reset_token),
           params: { email: user.email,
-                    user: { password:              "foobax",
-                            password_confirmation: "foobax" } }
+                    user: { password:              "foobaz",
+                            password_confirmation: "foobaz" } }
     assert is_logged_in?
     assert_not flash.empty?
     assert_redirected_to user
+  end
+
+  test "expired token" do
+    get new_password_reset_path
+    post password_resets_path,
+         params: { password_reset: { email: @user.email } }
+
+    @user = assigns(:user)
+    @user.update_attribute(:reset_sent_at, 3.hours.ago)
+    patch password_reset_path(@user.reset_token),
+          params: { email: @user.email,
+                    user: { password:              "foobar",
+                            password_confirmation: "foobar" } }
+    assert_response :redirect
+    follow_redirect!
   end
 end

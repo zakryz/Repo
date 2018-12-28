@@ -1,0 +1,15 @@
+one:
+  follower: zakryz
+  followed: lana
+
+two:
+  follower: zakryz
+  followed: malory
+
+three:
+  follower: lana
+  followed: zakryz
+
+four:
+  follower: archer
+  followed: zakryz

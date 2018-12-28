@@ -4,7 +4,7 @@ class UserTest < ActiveSupport::TestCase
 
   def setup
     @user = User.new(name: "Example User", email: "user@example.com",
-                      password: "foobar", password_confirmation: "foobar")
+                     password: "foobar", password_confirmation: "foobar")
   end
 
   test "should be valid" do
@@ -12,32 +12,33 @@ class UserTest < ActiveSupport::TestCase
   end
 
   test "name should be present" do
-    @user.name = ""
+    @user.name = "     "
     assert_not @user.valid?
   end
 
   test "email should be present" do
     @user.email = "     "
     assert_not @user.valid?
-    end
+  end
 
-    test "name should not be too long"do
+  test "name should not be too long" do
     @user.name = "a" * 51
     assert_not @user.valid?
   end
 
-  test "email should not be too long"do
+  test "email should not be too long" do
     @user.email = "a" * 244 + "@example.com"
     assert_not @user.valid?
   end
+
   test "email validation should accept valid addresses" do
-  valid_addresses = %w[user@example.com USER@foo.COM A_US-ER@foo.bar.org
-                       first.last@foo.jp alice+bob@baz.cn]
-  valid_addresses.each do |valid_address|
-    @user.email = valid_address
-    assert @user.valid?, "#{valid_address.inspect} should be valid"
+    valid_addresses = %w[user@example.com USER@foo.COM A_US-ER@foo.bar.org
+                         first.last@foo.jp alice+bob@baz.cn]
+    valid_addresses.each do |valid_address|
+      @user.email = valid_address
+      assert @user.valid?, "#{valid_address.inspect} should be valid"
+    end
   end
-end
 
   test "email validation should reject invalid addresses" do
     invalid_addresses = %w[user@example,com user_at_foo.org user.name@example.
@@ -48,7 +49,7 @@ end
     end
   end
 
-  test "email addresses should be unique" do
+  test "email address should be unique" do
     duplicate_user = @user.dup
     duplicate_user.email = @user.email.upcase
     @user.save
@@ -61,7 +62,7 @@ end
   end
 
   test "password should have a minimum length" do
-    @user.password = @user.password_confirmation = "a" * 4
+    @user.password = @user.password_confirmation = "a" * 5
     assert_not @user.valid?
   end
 
@@ -69,11 +70,40 @@ end
     assert_not @user.authenticated?(:remember, '')
   end
 
-    test "associated microposts should be destroyed" do
+  test "associated microposts should be destroyed" do
     @user.save
     @user.microposts.create!(content: "Lorem ipsum")
     assert_difference 'Micropost.count', -1 do
       @user.destroy
+    end
+  end
+
+  test "should follow and unfollow a user" do
+    zakryz = users(:zakryz)
+    archer  = users(:archer)
+    assert_not zakryz.following?(archer)
+    zakryz.follow(archer)
+    assert zakryz.following?(archer)
+    assert archer.followers.include?(zakryz)
+    zakryz.unfollow(archer)
+    assert_not zakryz.following?(archer)
+  end
+
+  test "feed should have the right posts" do
+    zakryz = users(:zakryz)
+    archer  = users(:archer)
+    lana    = users(:lana)
+    # Posts from followed user
+    lana.microposts.each do |post_following|
+      assert zakryz.feed.include?(post_following)
+    end
+    # Posts from self
+    zakryz.microposts.each do |post_self|
+      assert zakryz.feed.include?(post_self)
+    end
+    # Posts from unfollowed user
+    archer.microposts.each do |post_unfollowed|
+      assert_not zakryz.feed.include?(post_unfollowed)
     end
   end
 end
